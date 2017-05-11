@@ -13,9 +13,10 @@
 #define CYMO_STRINGIFY(v) CYMO_STRINGIFY_HELPER(v)
 #define CYMO_STRINGIFY_HELPER(v) #v
 
-#define CYMO_VERSION_STRING_BASE       \
-    CYMO_STRINGIFY(CYMO_VERSION_MAJOR) \
-    "." CYMO_STRINGIFY(CYMO_VERSION_MINOR) "." CYMO_STRINGIFY(CYMO_VERSION_PATCH)
+#define CYMO_VERSION_STRING_BASE                                               \
+    CYMO_STRINGIFY(CYMO_VERSION_MAJOR)                                         \
+    "." CYMO_STRINGIFY(CYMO_VERSION_MINOR) "." CYMO_STRINGIFY(                 \
+	CYMO_VERSION_PATCH)
 
 #if CYMO_VERSION_IS_RELEASE
 #define CYMO_VERSION_STRING CYMO_VERSION_STRING_BASE
@@ -25,4 +26,4 @@
 
 unsigned int cm_version(void) { return CYMO_VERSION_HEX; }
 
-const char* cm_version_string(void) { return CYMO_VERSION_STRING; }
+const char *cm_version_string(void) { return CYMO_VERSION_STRING; }

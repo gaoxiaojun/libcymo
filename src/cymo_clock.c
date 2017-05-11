@@ -11,14 +11,7 @@
 #include "cymo_clock.h"
 #include <assert.h>
 
-struct clock_s {
-    clock_type type;
-    clock_mode mode;
-    datetime_t time;
-    reminder_queue_t queue;
-};
-
-int clock_init(cm_clock_t *c, clock_type type)
+int clock_init(cm_clock_t* c, clock_type type)
 {
     c->type = type;
     c->mode = CM_CLOCK_MODE_SIMULATION;
@@ -26,7 +19,7 @@ int clock_init(cm_clock_t *c, clock_type type)
     return 0;
 }
 
-int clock_destory(cm_clock_t *c)
+int clock_destory(cm_clock_t* c)
 {
     reminder_queue_destory(&c->queue);
     return 0;
@@ -70,8 +63,8 @@ void clock_set_datetime(cm_clock_t* c, datetime_t time)
         c->time = time;
     } else {
         if (c->mode != CM_CLOCK_MODE_SIMULATION) {
-            printf(
-                "Can not set dateTime because Clock is not in the Simulation mode\n");
+            printf("Can not set dateTime because Clock is not in the "
+                   "Simulation mode\n");
             return;
         }
         if (time < c->time) {
@@ -102,10 +95,11 @@ void clock_clear(cm_clock_t* c)
 reminder_t* clock_add_reminder(cm_clock_t* c, datetime_t time,
     reminder_cb callback, void* data)
 {
-    reminder_t *r = malloc(sizeof(reminder_t));
-    if(!r) return NULL;
+    reminder_t* r = malloc(sizeof(reminder_t));
+    if (!r)
+        return NULL;
 
-    if(reminder_queue_push(&c->queue, r))  {// fail
+    if (reminder_queue_push(&c->queue, r)) { // fail
         free(r);
         return NULL;
     }
@@ -113,7 +107,8 @@ reminder_t* clock_add_reminder(cm_clock_t* c, datetime_t time,
     return r;
 }
 
-void clock_remove_reminder(cm_clock_t* c, datetime_t time,
-    reminder_cb callback) {}
+void clock_remove_reminder(cm_clock_t* c, datetime_t time, reminder_cb callback)
+{
+}
 
 reminder_queue_t* clock_get_queue(cm_clock_t* c) { return &c->queue; }

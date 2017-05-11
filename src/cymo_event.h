@@ -19,101 +19,73 @@
 #include <cymo.h>
 
 typedef enum {
-  CM_EVENT_ASK,
-  CM_EVENT_BID,
-  CM_EVENT_TRADE,
+    CM_EVENT_ASK,
+    CM_EVENT_BID,
+    CM_EVENT_TRADE,
 
-  CM_EVENT_QUEUEOPEND,
-  CM_EVENT_QUEUECLOSED,
+    CM_EVENT_QUEUEOPEND,
+    CM_EVENT_QUEUECLOSED,
 
-  CM_EVENT_SIMULATORSTART,
-  CM_EVENT_SIMULATORSTOP,
+    CM_EVENT_REMINDER,
+    CM_EVENT_SIMULATOR_START,
+    CM_EVENT_SIMULATOR_STOP,
+    CM_EVENT_LOOP_RESUME,
+    CM_EVENT_LOOP_STEP,
+    CM_EVENT_LOOP_PAUSE,
+    CM_EVENT_LOOP_STOPPED,
+    CM_EVENT_CUSTOM_START
 } event_type;
 
-#define EVENT_PUBLIC_FIELDS                                                    \
-  datetime_t timestamp;                                                        \
-  uint16_t type;                                                               \
-  atomic_ushort ref;
+#define EVENT_PUBLIC_FIELDS \
+    datetime_t timestamp;   \
+    uint16_t type;          \
+    atomic_ushort ref;
 
-typedef struct event_s { EVENT_PUBLIC_FIELDS } event_t;
+typedef struct event_s {
+    EVENT_PUBLIC_FIELDS
+} event_t;
 
-static inline void event_init(event_t *e, event_type type) {
-  e->type = type;
-  e->ref = 1;
-}
+typedef void (*event_init)(event_t* e, va_list args);
+typedef void (*event_destory)(event_t* e);
+typedef void (*event_default_process)(event_t* e);
+typedef struct event_class_s {
+    size_t size;
+    event_init init;
+    event_destory destory;
+    event_default_process processor;
+} event_class_t;
 
-static inline datetime_t event_get_time(event_t *e) { return e->timestamp; }
+extern event_class_t event_classes[CM_EVENT_CUSTOM_START];
 
-static inline void event_set_time(event_t *e, datetime_t time) {
-  e->timestamp = time;
-}
-
-static inline event_type event_get_type(event_t *e) {
-  return (event_type)(e->type);
-}
-
-static inline unsigned short event_ref(event_t *e) {
-  return atomic_fetch_add(&e->ref, 1);
-}
-
-static inline unsigned short event_unref(event_t *e) {
-  unsigned short count;
-  count = atomic_fetch_sub(&e->ref, 1);
-  if (count == 1) {
-    free(e);
-  }
-  return count;
-}
-
-static inline int event_is_single_ref(event_t *e) {
-  return (atomic_load(&e->ref) == 1);
-}
+event_t* cm_event_new(event_type type, ...);
+void cm_event_free(event_t* e);
+void cm_event_process(event_t*e);
+unsigned short event_ref(event_t* e);
+unsigned short event_unref(event_t* e);
+int event_is_single_ref(event_t* e);
 
 typedef struct tick_s {
-  event_t head;
-  int16_t provider;
-  int16_t instrument;
-  double price;
-  long size;
+    event_t head;
+    int16_t provider;
+    int16_t instrument;
+    double price;
+    long size;
 } tick_t;
 
-typedef struct _ask { tick_t tick; } ask_t;
+typedef struct ask_s {
+    tick_t tick;
+} cm_ask_t;
 
-typedef struct _bid { tick_t tick; } bid_t;
+typedef struct bid_s {
+    tick_t tick;
+} cm_bid_t;
 
-typedef struct _trade { tick_t tick; } trade_t;
+typedef struct trade_s {
+    tick_t tick;
+} cm_trade_t;
 
-static inline void tick_event_init(tick_t *e, event_type type) {
-  event_init((event_t *)e, type);
-  e->provider = 0;
-  e->instrument = 0;
-  e->price = 0;
-  e->size = 0;
-}
-
-static inline void ask_event_init(ask_t *e) {
-  tick_event_init((tick_t *)e, CM_EVENT_ASK);
-}
-
-static inline void bid_event_init(ask_t *e) {
-  tick_event_init((tick_t *)e, CM_EVENT_BID);
-}
-
-static inline void trade_event_init(ask_t *e) {
-  tick_event_init((tick_t *)e, CM_EVENT_TRADE);
-}
-
-typedef struct { EVENT_PUBLIC_FIELDS } OnSimulationStop;
-
-static inline void on_simulation_stop_event_init(event_t *e) {
-  event_init((event_t *)e, CM_EVENT_SIMULATORSTOP);
-  e->timestamp = MIN_DATE_TIME;
-}
-
-static inline OnSimulationStop *new_on_simulation_stop_event() {
-  OnSimulationStop *e = malloc(sizeof(OnSimulationStop));
-  on_simulation_stop_event_init((event_t *)e);
-  return e;
-}
+typedef struct {
+    EVENT_PUBLIC_FIELDS
+} OnSimulationStop;
 
 #endif // CTF_EVENT_H

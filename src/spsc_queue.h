@@ -30,13 +30,16 @@
 #define ALIGN_TO_AVOID_FALSE_SHARING ALIGNED(kCacheLineSize)
 
 typedef struct spsc_queue_s {
-  uint32_t capacity;
-  void **records;
-  ALIGN_TO_AVOID_FALSE_SHARING atomic_uint read_pos;
-  ALIGN_TO_AVOID_FALSE_SHARING atomic_uint write_pos;
-  char pad[kCacheLineSize - sizeof(atomic_uint)];
+    uint32_t capacity;
+    void **records;
+    ALIGN_TO_AVOID_FALSE_SHARING atomic_uint read_pos;
+    ALIGN_TO_AVOID_FALSE_SHARING atomic_uint write_pos;
+    char pad[kCacheLineSize - sizeof(atomic_uint)];
 } spsc_queue_t;
 
+/* @param size must be large than 2
+ * @resule 0 successful
+ */
 int spsc_queue_init(spsc_queue_t *q, unsigned int size);
 
 void spsc_queue_destroy(spsc_queue_t *q);

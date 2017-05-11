@@ -20,8 +20,8 @@ struct pipe_node_s;
 RB_HEAD(pipe_tree_s, pipe_node_s);
 
 typedef struct event_pipe_s {
-  struct pipe_tree_s tree;
-  uint64_t queue_counter;
+    struct pipe_tree_s tree;
+    uint64_t queue_counter;
 } event_pipe_t;
 
 int event_pipe_init(event_pipe_t *p);

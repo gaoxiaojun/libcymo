@@ -13,6 +13,7 @@
 
 #include "cymo_event.h"
 #include <stdbool.h>
+#include "spsc_queue.h"
 
 /*
  * lock-free spsc event queue
@@ -21,16 +22,28 @@ typedef enum { kData, kExecution, kService, kHistorical } EventQueueId;
 typedef enum { kMaster, kSlave } EventQueueType;
 typedef enum { kHighest, kHigh, kNormal, kLow, kLowest } EventQueuePriority;
 
-typedef struct cm_queue_s cm_queue_t;
+typedef struct cm_queue_s {
+    EventQueueId id;
+    EventQueueType type;
+    EventQueuePriority priority;
+    char *name;
+    //event_bus_t *bus;
+    void *bus;
+    void *loop;
+    int is_synced;
+    spsc_queue_t spsc;
+}cm_queue_t;
+
 typedef struct event_bus_s event_bus_t;
 
 cm_queue_t *cm_queue_new(EventQueueId id, EventQueueType type,
-                         EventQueuePriority priority, unsigned int size,
-                         event_bus_t *bus);
+			 EventQueuePriority priority, unsigned int size,
+			 event_bus_t *bus);
 void cm_queue_free(cm_queue_t *q);
+
 int cm_queue_init(cm_queue_t *q, EventQueueId id, EventQueueType type,
-                  EventQueuePriority priority, unsigned int size,
-                  event_bus_t *bus);
+		  EventQueuePriority priority, unsigned int size,
+		  event_bus_t *bus);
 int cm_queue_destory(cm_queue_t *q);
 void cm_queue_clear(cm_queue_t *q);
 
@@ -49,7 +62,6 @@ int cm_queue_pop(cm_queue_t *q, event_t **);
 
 /* if queue is empty, peek will return null pointer */
 event_t *cm_queue_peek(cm_queue_t *q);
-datetime_t cm_queue_peek_time(cm_queue_t *q);
 
 int cm_queue_is_empty(cm_queue_t *q);
 int cm_queue_is_full(cm_queue_t *q);

@@ -9,22 +9,12 @@
  ******************************************************************************/
 
 #include "cymo_queue.h"
+#include "cymo_bus.h"
+#include "cymo_loop.h"
 #include "cymo_event.h"
-#include "spsc_queue.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
-#include "cymo_bus.h"
-
-struct cm_queue_s {
-    EventQueueId id;
-    EventQueueType type;
-    EventQueuePriority priority;
-    char* name;
-    event_bus_t* bus;
-    int is_synced;
-    spsc_queue_t spsc;
-};
 
 int cm_queue_init(cm_queue_t* q, EventQueueId id, EventQueueType type,
     EventQueuePriority priority, unsigned int size,
@@ -76,8 +66,8 @@ int cm_queue_push(cm_queue_t* q, event_t* e)
     assert(e);
     int is_empty = spsc_queue_is_empty(&q->spsc);
     int ret = spsc_queue_push(&q->spsc, e);
-    if (is_empty && ret && q->bus)
-        event_bus_wakeup(q->bus);
+    if (is_empty && ret && q->loop)
+        cymo_wakeup(q->loop);
     return ret;
 }
 
@@ -154,14 +144,6 @@ void cm_queue_set_synched(cm_queue_t* q, int is_synched)
     q->is_synced = is_synched;
 }
 
-datetime_t cm_queue_peek_time(cm_queue_t* q)
-{
-    assert(q);
-    event_t* e = cm_queue_peek(q);
-    assert(e);
-    return event_get_time(e);
-}
-
 void cm_queue_clear(cm_queue_t* q)
 {
     event_t* e;
@@ -171,12 +153,6 @@ void cm_queue_clear(cm_queue_t* q)
     }
 }
 
-void cm_queue_set_bus(cm_queue_t *q, event_bus_t *bus)
-{
-    q->bus = bus;
-}
+void cm_queue_set_bus(cm_queue_t* q, event_bus_t* bus) { q->bus = bus; }
 
-event_bus_t* cm_queue_get_bus(cm_queue_t *q)
-{
-    return q->bus;
-}
+event_bus_t* cm_queue_get_bus(cm_queue_t* q) { return q->bus; }
