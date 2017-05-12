@@ -9,7 +9,6 @@
  ******************************************************************************/
 
 #include "cymo_queue.h"
-#include "cymo_bus.h"
 #include "cymo_event.h"
 #include "cymo_loop.h"
 #include <assert.h>

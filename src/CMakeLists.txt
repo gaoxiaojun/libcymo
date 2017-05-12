@@ -11,7 +11,6 @@ set(CYMO_HEADER
 )
 set(CYMO_SRC
         cymo_datetime.c
-        cymo_bus.c
         cymo_event.c
         cymo_loop.c
         cymo_queue.c
