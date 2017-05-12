@@ -49,6 +49,166 @@
 
   return NULL;
 }*/
+#define DATA_PIPE 0
+#define EXECUTION_PIPE 1
+#define HISTORICAL_PIPE 2
+#define SERVICE_PIPE 3
+
+static event_t* realtime_dequeue(cymo_t* loop)
+{
+    while (true) {
+        if (!event_pipe_is_empty(&loop->pipe[DATA_PIPE]) && !loop->saved_event) {
+            event_t* e = event_pipe_read(&loop->pipe[DATA_PIPE]);
+
+            if (e->type == CM_EVENT_SIMULATOR_STOP) {
+                loop->is_simulation_stop = 1;
+                continue;
+            }
+
+            if (e->timestamp < cymo_get_datetime(loop)) {
+                if (e->type != CM_EVENT_QUEUEOPEND && e->type != CM_EVENT_QUEUECLOSED) {
+                    if (e->type != CM_EVENT_SIMULATOR_PROGRESS) {
+                        if (loop->show_warnings) {
+                            //LOG
+                            continue;
+                        }
+                        continue;
+                    }
+                }
+                e->timestamp = cymo_get_datetime(loop);
+            }
+            loop->saved_event = e;
+        }
+
+        if (!event_pipe_is_empty(&loop->pipe[EXECUTION_PIPE])) {
+            return event_pipe_read(&loop->pipe[EXECUTION_PIPE]);
+        }
+
+        // local clock
+        if (!reminder_queue_is_empty(&loop->clock_queue[CYMO_LOCAL_CLOCK])) {
+            if (loop->is_simulation_stop) {
+                if (loop->clear_reminders) {
+                    reminder_queue_clear(&loop->clock_queue[CYMO_LOCAL_CLOCK]);
+                } else if (loop->read_reminders) {
+                    reminder_t* t;
+                    reminder_queue_pop(&loop->clock_queue[CYMO_LOCAL_CLOCK], &t);
+                    return (event_t*)t;
+                }
+            }
+
+            if (loop->saved_event) {
+                if (loop->reminder_order == kBefore) {
+                    reminder_t* t = reminder_queue_peek(&loop->clock_queue[CYMO_LOCAL_CLOCK]);
+                    if (t->timestamp <= loop->saved_event->timestamp)
+                        break;
+                    else if (t->timestamp < loop->saved_event->timestamp) {
+                        reminder_t* t;
+                        reminder_queue_pop(&loop->clock_queue[CYMO_LOCAL_CLOCK], &t);
+                        return (event_t*)t;
+                    }
+                }
+            }
+        }
+
+        // exchage clock
+
+        if (!reminder_queue_is_empty(&loop->clock_queue[CYMO_EXCHANGE_CLOCK]) && loop->saved_event != NULL && (loop->saved_event->type == CM_EVENT_BID || loop->saved_event->type == CM_EVENT_ASK || loop->saved_event->type == CM_EVENT_TRADE)) {
+            if (loop->reminder_order == kBefore) {
+                reminder_t* t = reminder_queue_peek(&loop->clock_queue[CYMO_EXCHANGE_CLOCK]);
+                if (t->timestamp <= ((tick_t*)loop->saved_event)->exchange_timestamp) {
+                    reminder_t* t;
+                    reminder_queue_pop(&loop->clock_queue[CYMO_EXCHANGE_CLOCK], &t);
+                    return (event_t*)t;
+                } else if (t->timestamp < ((tick_t*)loop->saved_event)->exchange_timestamp) {
+                    reminder_t* t;
+                    reminder_queue_pop(&loop->clock_queue[CYMO_EXCHANGE_CLOCK], &t);
+                    return (event_t*)t;
+                }
+            }
+        }
+
+        // command
+        // service
+        if (!event_pipe_is_empty(&loop->pipe[SERVICE_PIPE]))
+            return event_pipe_read(&loop->pipe[SERVICE_PIPE]);
+
+        if (loop->saved_event) {
+            event_t* e = loop->saved_event;
+            loop->saved_event = NULL;
+            return e;
+        }
+
+        if (loop->is_simulation_stop) {
+            loop->saved_event = cm_event_new(CM_EVENT_SIMULATOR_STOP);
+            loop->saved_event->timestamp = cymo_get_datetime(loop);
+            loop->is_simulation_stop = 0;
+            event_t* e = loop->saved_event;
+            loop->saved_event = NULL;
+            return e;
+        }
+    }
+}
+
+static event_t* simulator_dequeue(cymo_t* loop)
+{
+    while (true) {
+        if (!event_pipe_is_empty(&loop->pipe[DATA_PIPE]) && !loop->saved_event) {
+            loop->saved_event = event_pipe_read(&loop->pipe[DATA_PIPE]);
+        }
+
+
+
+        // local clock
+        if (!reminder_queue_is_empty(&loop->clock_queue[CYMO_LOCAL_CLOCK])) {
+
+                if (loop->reminder_order == kBefore) {
+                    reminder_t* t = reminder_queue_peek(&loop->clock_queue[CYMO_LOCAL_CLOCK]);
+                    if (t->timestamp <= loop->saved_event->timestamp)
+                        break;
+                    else if (t->timestamp < loop->saved_event->timestamp) {
+                        reminder_t* t;
+                        reminder_queue_pop(&loop->clock_queue[CYMO_LOCAL_CLOCK], &t);
+                        return (event_t*)t;
+                    }
+
+            }
+        }
+
+        // exchage clock
+
+        if (!reminder_queue_is_empty(&loop->clock_queue[CYMO_EXCHANGE_CLOCK]) && loop->saved_event != NULL
+                && (loop->saved_event->type == CM_EVENT_BID
+                    || loop->saved_event->type == CM_EVENT_ASK
+                    || loop->saved_event->type == CM_EVENT_TRADE)) {
+            if (loop->reminder_order == kBefore) {
+                reminder_t* t = reminder_queue_peek(&loop->clock_queue[CYMO_EXCHANGE_CLOCK]);
+                if (t->timestamp <= ((tick_t*)loop->saved_event)->exchange_timestamp) {
+                    reminder_t* t;
+                    reminder_queue_pop(&loop->clock_queue[CYMO_EXCHANGE_CLOCK], &t);
+                    return (event_t*)t;
+                } else if (t->timestamp < ((tick_t*)loop->saved_event)->exchange_timestamp) {
+                    reminder_t* t;
+                    reminder_queue_pop(&loop->clock_queue[CYMO_EXCHANGE_CLOCK], &t);
+                    return (event_t*)t;
+                }
+            }
+        }
+
+        // execution
+        if (!event_pipe_is_empty(&loop->pipe[EXECUTION_PIPE])) {
+            return event_pipe_read(&loop->pipe[EXECUTION_PIPE]);
+        }
+        // service
+        if (!event_pipe_is_empty(&loop->pipe[SERVICE_PIPE]))
+            return event_pipe_read(&loop->pipe[SERVICE_PIPE]);
+
+        if (loop->saved_event) {
+            event_t* e = loop->saved_event;
+            loop->saved_event = NULL;
+            return e;
+        }
+    }
+}
 
 static event_t* dequeue(cymo_t* loop)
 {
@@ -58,7 +218,10 @@ static event_t* dequeue(cymo_t* loop)
         event_pipe_add(&loop->pipe[q->type], q);
     }
 
-    //return cymo_dequeue(&loop->bus);
+    if (loop->mode == CYMO_SIMULATOR)
+        return simulator_dequeue(loop);
+    else
+        return realtime_dequeue(loop);
 }
 
 static inline void timewait(cymo_t* loop, uint64_t timeout)
@@ -246,7 +409,6 @@ void cymo_timed_pause(cymo_t* loop, datetime_t timeout)
 {
     cymo_add_reminder(loop, CM_CLOCK_LOCAL, timeout, &_pause, loop);
 }
-
 
 int cymo_get_clear_reminders(cymo_t* loop)
 {

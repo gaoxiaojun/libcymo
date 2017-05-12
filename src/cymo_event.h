@@ -29,6 +29,7 @@ typedef enum {
     CM_EVENT_REMINDER,
     CM_EVENT_SIMULATOR_START,
     CM_EVENT_SIMULATOR_STOP,
+    CM_EVENT_SIMULATOR_PROGRESS,
     CM_EVENT_LOOP_RESUME,
     CM_EVENT_LOOP_STEP,
     CM_EVENT_LOOP_PAUSE,
@@ -65,7 +66,8 @@ unsigned short event_unref(event_t* e);
 int event_is_single_ref(event_t* e);
 
 typedef struct tick_s {
-    event_t head;
+    EVENT_PUBLIC_FIELDS
+    datetime_t exchange_timestamp;
     int16_t provider;
     int16_t instrument;
     double price;
