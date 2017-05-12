@@ -13,7 +13,8 @@
 #include <assert.h>
 
 typedef struct timer_node_s {
-    RB_ENTRY(timer_node_s) rbentry;
+    RB_ENTRY(timer_node_s)
+    rbentry;
     reminder_t* reminder;
     uint64_t timer_id;
 } timer_node_t;
@@ -28,7 +29,7 @@ int timer_node_compare(timer_node_t* lhs, timer_node_t* rhs)
     if (lhs->reminder == rhs->reminder && lhs->reminder != NULL && rhs->reminder != NULL)
         return 0;
 
-    if(lhs->timer_id == rhs->timer_id && lhs->timer_id != 0 && rhs->timer_id != 0)
+    if (lhs->timer_id == rhs->timer_id && lhs->timer_id != 0 && rhs->timer_id != 0)
         return 0;
 
     if (lhs->reminder->timestamp == rhs->reminder->timestamp
@@ -136,7 +137,7 @@ int reminder_queue_push(reminder_queue_t* q, reminder_t* e, uint64_t* timer_id)
         node_free(node);
         return -2;
     }
-    if(timer_id)
+    if (timer_id)
         *timer_id = node->timer_id;
     return node->timer_id;
 }
@@ -194,7 +195,7 @@ int reminder_queue_remove(reminder_queue_t* q, datetime_t timeout, reminder_cb c
     return 0;
 }
 
-int reminder_queue_remove_by_id(reminder_queue_t *q, uint64_t timer_id)
+int reminder_queue_remove_by_id(reminder_queue_t* q, uint64_t timer_id)
 {
     timer_node_t fnode;
     fnode.reminder = NULL; // UNUSED

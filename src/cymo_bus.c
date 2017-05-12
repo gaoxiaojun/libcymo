@@ -60,7 +60,6 @@ static event_t* enqueue_attach(event_bus_t* bus)
     return e;
 }
 
-
 static event_t* simulation_dequeue(event_bus_t* bus)
 {
     while (true) {
@@ -83,13 +82,13 @@ static event_t* simulation_dequeue(event_bus_t* bus)
         }
 
         if (!reminder_queue_is_empty(&bus->clock_queue[CYMO_LOCAL_CLOCK])) {
-            reminder_t *r;
+            reminder_t* r;
             if (!reminder_queue_pop(&bus->clock_queue[CYMO_LOCAL_CLOCK], &r))
                 return (event_t*)r;
         }
 
         if (!reminder_queue_is_empty(&bus->clock_queue[CYMO_EXCHANGE_CLOCK])) {
-            reminder_t *r;
+            reminder_t* r;
             if (!reminder_queue_pop(&bus->clock_queue[CYMO_EXCHANGE_CLOCK], &r))
                 return (event_t*)r;
         }
@@ -121,15 +120,15 @@ static event_t* realtime_dequeue(event_bus_t* bus)
         }
 
         if (!reminder_queue_is_empty(&bus->clock_queue[CYMO_LOCAL_CLOCK])) {
-            reminder_t *r;
+            reminder_t* r;
             if (!reminder_queue_pop(&bus->clock_queue[CYMO_LOCAL_CLOCK], &r))
-                return (event_t *)r;
+                return (event_t*)r;
         }
 
         if (!reminder_queue_is_empty(&bus->clock_queue[CYMO_EXCHANGE_CLOCK])) {
-            reminder_t *r;
+            reminder_t* r;
             if (!reminder_queue_pop(&bus->clock_queue[CYMO_EXCHANGE_CLOCK], &r))
-                return (event_t *)r;
+                return (event_t*)r;
         }
 
         if (!event_pipe_is_empty(&bus->pipe[CYMO_EXECUTION_PIPE])) {
@@ -158,8 +157,7 @@ event_t* event_bus_dequeue(event_bus_t* bus)
 
 int event_bus_add_queue(event_bus_t* bus, cm_queue_t* q)
 {
-    q->bus = bus;
-    event_pipe_add(&bus->pipe[cm_queue_get_id(q)], q);
+    event_pipe_add(&bus->pipe[q->type], q);
     return true;
 }
 
@@ -249,29 +247,30 @@ void event_bus_set_exchange_datetime(event_bus_t* bus, datetime_t time)
     bus->clock_datetime[CYMO_EXCHANGE_CLOCK] = time;
 }
 
-int event_bus_add_timer(event_bus_t *bus, int clock_type, datetime_t time, reminder_cb callback, void *user_data)
+int event_bus_add_timer(event_bus_t* bus, int clock_type, datetime_t time, reminder_cb callback, void* user_data)
 {
-    reminder_t * timer = malloc(sizeof(reminder_t));
-    if(!timer) return -1;
+    reminder_t* timer = malloc(sizeof(reminder_t));
+    if (!timer)
+        return -1;
     timer->callback = callback;
     timer->user_data = user_data;
     timer->type = CM_EVENT_REMINDER;
     timer->timestamp = time;
 
-   if( reminder_queue_push(&bus->clock_queue[clock_type], timer, NULL) ) {
-       free(timer);
-       return -2;
-   }
+    if (reminder_queue_push(&bus->clock_queue[clock_type], timer, NULL)) {
+        free(timer);
+        return -2;
+    }
 
-   return 0;
+    return 0;
 }
 
-int event_bus_add_local_timer(event_bus_t *bus, datetime_t time, reminder_cb callback, void *user_data)
+int event_bus_add_local_timer(event_bus_t* bus, datetime_t time, reminder_cb callback, void* user_data)
 {
     return event_bus_add_timer(bus, CYMO_LOCAL_CLOCK, time, callback, user_data);
 }
 
-int event_bus_add_exchange_timer(event_bus_t *bus, datetime_t time, reminder_cb callback, void *user_data)
+int event_bus_add_exchange_timer(event_bus_t* bus, datetime_t time, reminder_cb callback, void* user_data)
 {
     return event_bus_add_timer(bus, CYMO_EXCHANGE_CLOCK, time, callback, user_data);
 }

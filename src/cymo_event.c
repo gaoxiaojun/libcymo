@@ -9,8 +9,8 @@
  ******************************************************************************/
 
 #include "cymo_event.h"
-#include <stdarg.h>
 #include <assert.h>
+#include <stdarg.h>
 
 unsigned short event_ref(event_t* e)
 {
@@ -34,7 +34,7 @@ int event_is_single_ref(event_t* e)
 
 static void tick_event_init(event_t* t, va_list args)
 {
-    tick_t *e = (tick_t *)t;
+    tick_t* e = (tick_t*)t;
     e->provider = 0;
     e->instrument = 0;
     e->price = 0;
@@ -63,7 +63,7 @@ event_t* cm_event_new(event_type type, ...)
     if (init)
         init(e, args);
     va_end(args);
-        return e;
+    return e;
 }
 
 void cm_event_free(event_t* e)
@@ -75,27 +75,20 @@ void cm_event_free(event_t* e)
 }
 
 event_class_t event_classes[CM_EVENT_CUSTOM_START] = {
-    {
-        // ASK
+    { // ASK
         .init = tick_event_init,
         .destory = NULL,
-        .size = sizeof(tick_t)
-    },
-    {
-        // BID
+        .size = sizeof(tick_t) },
+    { // BID
         .init = tick_event_init,
         .destory = NULL,
-        .size = sizeof(tick_t)
-    },
-    {
-        // TRADE
+        .size = sizeof(tick_t) },
+    { // TRADE
         .init = tick_event_init,
         .destory = NULL,
-        .size = sizeof(tick_t)
-    },
+        .size = sizeof(tick_t) },
 };
 
-void cm_event_process(event_t *e)
+void cm_event_process(event_t* e)
 {
-
 }

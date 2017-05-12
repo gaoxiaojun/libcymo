@@ -10,24 +10,20 @@
 
 #include "cymo_queue.h"
 #include "cymo_bus.h"
-#include "cymo_loop.h"
 #include "cymo_event.h"
+#include "cymo_loop.h"
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
 
-int cm_queue_init(cm_queue_t* q, EventQueueId id, EventQueueType type,
-    EventQueuePriority priority, unsigned int size,
-    event_bus_t* bus)
+int cm_queue_init(cm_queue_t *q, cm_queue_type type, unsigned int size)
 {
     assert(size >= 2);
     if (spsc_queue_init(&q->spsc, size) < 0)
         return -1;
 
-    q->id = id;
     q->type = type;
-    q->priority = priority;
-    q->bus = bus;
+    q->loop = NULL;
     return 0;
 }
 
@@ -38,15 +34,13 @@ int cm_queue_destory(cm_queue_t* q)
     return 0;
 }
 
-cm_queue_t* cm_queue_new(EventQueueId id, EventQueueType type,
-    EventQueuePriority priority, unsigned int size,
-    event_bus_t* bus)
+cm_queue_t* cm_queue_new(cm_queue_type type, unsigned int size)
 {
     assert(size >= 2);
     cm_queue_t* q = malloc(sizeof(cm_queue_t));
     if (!q)
         return NULL;
-    if (cm_queue_init(q, id, type, priority, size, bus)) {
+    if (cm_queue_init(q, type, size)) {
         free(q);
         return NULL;
     }
@@ -65,10 +59,10 @@ int cm_queue_push(cm_queue_t* q, event_t* e)
     assert(q);
     assert(e);
     int is_empty = spsc_queue_is_empty(&q->spsc);
-    int ret = spsc_queue_push(&q->spsc, e);
-    if (is_empty && ret && q->loop)
+    int err = spsc_queue_push(&q->spsc, e);
+    if (is_empty && !err && q->loop)
         cymo_wakeup(q->loop);
-    return ret;
+    return err;
 }
 
 int cm_queue_pop(cm_queue_t* q, event_t** item)
@@ -108,22 +102,10 @@ unsigned int cm_queue_capacity(cm_queue_t* q)
     return spsc_queue_capacity(&q->spsc);
 }
 
-EventQueueId cm_queue_get_id(cm_queue_t* q)
-{
-    assert(q);
-    return q->id;
-}
-
-EventQueueType cm_queue_get_type(cm_queue_t* q)
+cm_queue_type cm_queue_get_type(cm_queue_t* q)
 {
     assert(q);
     return q->type;
-}
-
-EventQueuePriority cm_queue_get_priority(cm_queue_t* q)
-{
-    assert(q);
-    return q->priority;
 }
 
 char* cm_queue_get_name(cm_queue_t* q)
@@ -132,27 +114,11 @@ char* cm_queue_get_name(cm_queue_t* q)
     return q->name;
 }
 
-int cm_queue_is_synched(cm_queue_t* q)
-{
-    assert(q);
-    return q->is_synced;
-}
-
-void cm_queue_set_synched(cm_queue_t* q, int is_synched)
-{
-    assert(q);
-    q->is_synced = is_synched;
-}
-
 void cm_queue_clear(cm_queue_t* q)
 {
     event_t* e;
-    while (spsc_queue_pop(&q->spsc, (void**)&e)) {
+    while (!spsc_queue_pop(&q->spsc, (void**)&e)) {
         assert(e);
         event_unref((event_t*)e);
     }
 }
-
-void cm_queue_set_bus(cm_queue_t* q, event_bus_t* bus) { q->bus = bus; }
-
-event_bus_t* cm_queue_get_bus(cm_queue_t* q) { return q->bus; }

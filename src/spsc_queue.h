@@ -44,8 +44,14 @@ int spsc_queue_init(spsc_queue_t *q, unsigned int size);
 
 void spsc_queue_destroy(spsc_queue_t *q);
 
+/* return 0 successful
+ * other means error
+ */
 int spsc_queue_push(spsc_queue_t *q, void *e);
 
+/* return 0 successful
+ * other means error
+ */
 int spsc_queue_pop(spsc_queue_t *q, void **item);
 
 void *spsc_queue_peek(spsc_queue_t *q);

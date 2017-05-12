@@ -8,6 +8,11 @@
  * License 1.0. See accompanying files LICENSE and LICENSE_ALTERNATIVE.       *
  ******************************************************************************/
 #include "cymo_loop.h"
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h> // sleep/usleep
+#endif
 
 static event_t* dequeue(cymo_t* loop)
 {
@@ -135,7 +140,19 @@ int cymo_add_reminder(cymo_t* loop, int clock_type, datetime_t time_at, timer_cb
 
 void cymo_sleep(uint64_t millisecondsTimeout)
 {
+#ifdef _WIN32
+    Sleep(millisecondsTimeout);
+#else
+    int sec;
+    int usec;
 
+    sec = millisecondsTimeout / 1000;
+    usec = (millisecondsTimeout % 1000) * 1000;
+    if (sec > 0)
+      sleep(sec);
+    if (usec > 0)
+      usleep(usec);
+#endif
 }
 
 void cymo_resume(cymo_t *loop)
