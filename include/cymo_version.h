@@ -13,8 +13,8 @@
 
 // Quantitative Trading Library
 
-#define CYMO_VERSION_MAJOR 1
-#define CYMO_VERSION_MINOR 11
+#define CYMO_VERSION_MAJOR 0
+#define CYMO_VERSION_MINOR 0
 #define CYMO_VERSION_PATCH 1
 #define CYMO_VERSION_IS_RELEASE 0
 #define CYMO_VERSION_SUFFIX "dev"

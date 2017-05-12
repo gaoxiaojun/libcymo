@@ -21,6 +21,28 @@ endif()
 option(LIBCYMO_ENABLE_TESTING "Enable unit test" ON)
 
 ################################################################################
+#                              get version                                     #
+################################################################################
+# read content of config.hpp
+file(READ "include/cymo_version.h" VERSION_H)
+# get line containing the version
+string(REGEX MATCH "#define CYMO_VERSION_MAJOR [0-9]+" VERSION_LINE "${VERSION_H}")
+# extract version number from line
+string(REGEX MATCH "[0-9]+" CYMO_VERSION_MAJOR "${VERSION_LINE}")
+# get line containing the version
+string(REGEX MATCH "#define CYMO_VERSION_MINOR [0-9]+" VERSION_LINE "${VERSION_H}")
+# extract version number from line
+string(REGEX MATCH "[0-9]+" CYMO_VERSION_MINOR "${VERSION_LINE}")
+# get line containing the version
+string(REGEX MATCH "#define CYMO_VERSION_PATCH [0-9]+" VERSION_LINE "${VERSION_H}")
+# extract version number from line
+string(REGEX MATCH "[0-9]+" CYMO_VERSION_PATCH "${VERSION_LINE}")
+
+# create full version string
+set(CYMO_VERSION
+    "${CYMO_VERSION_MAJOR}.${CYMO_VERSION_MINOR}.${CYMO_VERSION_PATCH}")
+
+################################################################################
 #   set output paths for binaries and libraries if not provided by the user    #
 ################################################################################
 # prohibit in-source builds
@@ -102,7 +124,7 @@ if(NOT LIBCYMO_NO_SUMMARY)
     message(STATUS
             "\n====================|  Build Summary  |===================="
             "\n"
-            "\nLibLIBCYMO version:     ${LIBCYMO_VERSION}"
+            "\nLibLIBCYMO version:     ${CYMO_VERSION}"
             "\n"
             "\nBuild type:        ${CMAKE_BUILD_TYPE}"
             "\nBuild static:      ${LIBCYMO_BUILD_STATIC}"
