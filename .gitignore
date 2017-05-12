@@ -1,5 +1,8 @@
 *.swp
 unused/
+bld/
+build/
+cmake-*/
 *.out
 *.out.dSYM
 *.[oa]

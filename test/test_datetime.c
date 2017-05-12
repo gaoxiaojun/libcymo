@@ -6,7 +6,7 @@
 #include <assert.h>
 #include <string.h>
 #include <unistd.h>
-#include <cm.h>
+#include <cymo.h>
 
 char dst[100];
 

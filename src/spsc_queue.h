@@ -12,7 +12,6 @@
 #define CTF_SPSC_QUEUE_H
 
 #include <stdatomic.h>
-#include <stdbool.h>
 
 /*
  * lock-free spsc queue
@@ -44,12 +43,12 @@ int spsc_queue_init(spsc_queue_t *q, unsigned int size);
 
 void spsc_queue_destroy(spsc_queue_t *q);
 
-/* return 0 successful
+/* return 0 if successful
  * other means error
  */
 int spsc_queue_push(spsc_queue_t *q, void *e);
 
-/* return 0 successful
+/* return 0 if successful
  * other means error
  */
 int spsc_queue_pop(spsc_queue_t *q, void **item);
